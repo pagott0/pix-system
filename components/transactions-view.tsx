@@ -18,11 +18,10 @@ export function TransactionsView() {
   const { transactions, loading } = useTransactions({
     category: selectedCategory !== "All" ? selectedCategory : undefined,
   })
-
   const filteredTransactions = transactions.filter(
     (t) =>
-      t.recipientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      t.receiver_name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      t.description?.toLowerCase().includes(searchTerm?.toLowerCase()),
   )
 
   const total = filteredTransactions.reduce((sum, t) => sum + (t.type === "sent" ? -Math.abs(t.amount) : t.amount), 0)
@@ -98,18 +97,24 @@ export function TransactionsView() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{transaction.recipientName}</p>
+                    <p className="font-medium truncate">{transaction.receiver_name || "Unknown User"}</p>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
                         {transaction.category}
                       </Badge>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(transaction.createdAt).toLocaleString("pt-BR")}
+                        {new Date(transaction.created_at).toLocaleString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>
-                  <p className={`font-semibold ${transaction.amount > 0 ? "text-accent" : "text-foreground"}`}>
-                    {transaction.amount > 0 ? "+" : ""}R$ {Math.abs(transaction.amount).toFixed(2)}
+                  <p className={`font-semibold ${transaction.type === "received" ? "text-green-600" : "text-red-600"}`}>
+                    {transaction.type === "received" ? "+" : "-"}R$ {Math.abs(transaction.amount).toFixed(2)}
                   </p>
                 </div>
               </Card>

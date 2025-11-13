@@ -14,7 +14,7 @@ export function PixKeysView() {
   const { pixKeys, loading, addPixKey, deletePixKey, error } = usePixKeys()
 
   const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedType, setSelectedType] = useState<PixKeyType>("phone")
+  const [selectedType, setSelectedType] = useState<PixKeyType>("random")
   const [keyValue, setKeyValue] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,7 +48,7 @@ export function PixKeysView() {
 
   const canAddKeyType = (type: PixKeyType) => {
     if (type === "random") return true
-    return !pixKeys.some((key) => key.type === type)
+    return !pixKeys.some((key) => key.key_type === type)
   }
 
   const handleAddKey = async () => {
@@ -63,6 +63,7 @@ export function PixKeysView() {
       await addPixKey(selectedType, selectedType === "random" ? undefined : keyValue)
       setKeyValue("")
       setShowAddForm(false)
+      setSelectedType("random")
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to add key")
     } finally {
@@ -121,7 +122,7 @@ export function PixKeysView() {
                   <Button
                     key={type}
                     variant={selectedType === type ? "default" : "outline"}
-                    className="justify-start bg-transparent"
+                    className="justify-start"
                     onClick={() => setSelectedType(type)}
                     disabled={disabled}
                   >
@@ -177,7 +178,9 @@ export function PixKeysView() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false)
+              }}
               className="bg-transparent"
               disabled={isSubmitting}
             >
@@ -215,18 +218,18 @@ export function PixKeysView() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      {getKeyIcon(key.type)}
+                      {getKeyIcon(key.key_type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium">{getKeyLabel(key.type)}</p>
+                        <p className="text-sm font-medium">{getKeyLabel(key.key_type)}</p>
                         <Badge variant="secondary" className="text-xs">
-                          {key.type}
+                          {key.key_type}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground break-all">{key.value}</p>
+                      <p className="text-sm text-muted-foreground break-all">{key.key_value}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Added {new Date(key.createdAt).toLocaleDateString("pt-BR")}
+                        Added {new Date(key.created_at).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
                   </div>
@@ -234,7 +237,7 @@ export function PixKeysView() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleCopyKey(key.id, key.value)}
+                      onClick={() => handleCopyKey(key.id, key.key_value)}
                       className="h-8 w-8 p-0"
                     >
                       {copiedId === key.id ? (

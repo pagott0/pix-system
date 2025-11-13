@@ -4,11 +4,11 @@ import { useEffect, useState } from "react"
 
 interface Account {
   id: string
-  userId: string
+  user_id: string
   balance: number
-  income: number
-  expense: number
-  createdAt: string
+  institution_name: string
+  created_at: string
+  updated_at: string
 }
 
 export function useAccount() {

@@ -27,9 +27,11 @@ export interface Transaction {
   receiver_id: string
   amount: number
   description?: string
+  category?: string
   status: "pending" | "completed" | "failed"
   pix_key_used: string
   created_at: string
+  receiver_name?: string
 }
 
 export interface Account {

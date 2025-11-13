@@ -2,16 +2,18 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowUpRight, ArrowDownLeft, TrendingUp, Bell } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, TrendingUp, Bell, LogOut } from "lucide-react"
 import { BalanceChart } from "@/components/balance-chart"
 import { QuickActions } from "@/components/quick-actions"
 import { useAccount } from "@/hooks/use-account"
 import { useTransactions } from "@/hooks/use-transactions"
+import { useAuth } from "@/contexts/auth-context"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function DashboardView() {
   const { account, loading: accountLoading } = useAccount()
   const { transactions, loading: transactionsLoading } = useTransactions({ limit: 3 })
+  const { logout } = useAuth()
 
   if (accountLoading) {
     return (
@@ -23,9 +25,15 @@ export function DashboardView() {
   }
 
   const balanceDisplay = account?.balance ?? 0
-  const monthlyIncome = account?.income ?? 0
-  const monthlyExpense = account?.expense ?? 0
-  const monthlyGrowth = monthlyExpense > 0 ? ((monthlyIncome / monthlyExpense) * 100 - 100).toFixed(1) : 0
+  
+  const recentTransactions = transactions.slice(0, 3)
+  const totalReceived = recentTransactions
+    .filter((t) => t.type === "received")
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalSent = recentTransactions
+    .filter((t) => t.type === "sent")
+    .reduce((sum, t) => sum + t.amount, 0)
+  const monthlyGrowth = totalSent > 0 ? ((totalReceived / totalSent) * 100 - 100).toFixed(1) : "0.0"
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -34,10 +42,15 @@ export function DashboardView() {
           <h1 className="text-2xl font-bold text-foreground">Pix+</h1>
           <p className="text-sm text-muted-foreground">Welcome back</p>
         </div>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={logout} title="Sign out">
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       <Card className="p-6 bg-primary text-primary-foreground">
@@ -91,12 +104,18 @@ export function DashboardView() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">{transaction.recipientName}</p>
+                  <p className="font-medium">{transaction.receiver_name || "Unknown User"}</p>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(transaction.createdAt).toLocaleString("pt-BR")}
+                    {new Date(transaction.created_at).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </div>
-                <p className={`font-semibold ${transaction.type === "received" ? "text-accent" : "text-foreground"}`}>
+                <p className={`font-semibold ${transaction.type === "received" ? "text-green-600" : "text-red-600"}`}>
                   {transaction.type === "received" ? "+" : "-"}R$ {Math.abs(transaction.amount).toFixed(2)}
                 </p>
               </div>

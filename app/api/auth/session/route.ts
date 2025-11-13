@@ -28,30 +28,13 @@ export async function GET() {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ user: null }, { status: 200 })
     }
 
-    let { data: account, error } = await supabase.from("accounts").select("*").eq("user_id", user.id).single()
-
-    if (error && error.code === "PGRST116") {
-      // Account doesn't exist, create one
-      const { data: newAccount } = await supabase
-        .from("accounts")
-        .insert([
-          {
-            user_id: user.id,
-            balance: 1000.00,
-          },
-        ])
-        .select()
-        .single()
-
-      account = newAccount
-    }
-
-    return NextResponse.json(account)
+    return NextResponse.json({ user })
   } catch (error) {
-    console.error("[v0] Error fetching account:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[auth] Error checking session:", error)
+    return NextResponse.json({ user: null }, { status: 200 })
   }
 }
+
