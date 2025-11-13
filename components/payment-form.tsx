@@ -150,4 +150,3 @@ export function PaymentForm({ onSuccess, onCancel, showCancelButton = false }: P
     </div>
   )
 }
-
