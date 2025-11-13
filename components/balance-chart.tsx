@@ -2,25 +2,35 @@
 
 import { Card } from "@/components/ui/card"
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-
-const data = [
-  { day: "Mon", value: 3200 },
-  { day: "Tue", value: 3800 },
-  { day: "Wed", value: 3500 },
-  { day: "Thu", value: 4100 },
-  { day: "Fri", value: 3900 },
-  { day: "Sat", value: 4500 },
-  { day: "Sun", value: 4287 },
-]
+import { useAccount } from "@/hooks/use-account"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function BalanceChart() {
+  const { account, loading } = useAccount()
+
+  const data = [
+    { day: "Mon", value: 3200 },
+    { day: "Tue", value: 3800 },
+    { day: "Wed", value: 3500 },
+    { day: "Thu", value: 4100 },
+    { day: "Fri", value: 3900 },
+    { day: "Sat", value: 4500 },
+    { day: "Sun", value: account?.balance ?? 4287.5 },
+  ]
+
+  if (loading) {
+    return <Skeleton className="h-48 w-full" />
+  }
+
   return (
     <Card className="p-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Weekly evolution</p>
-            <p className="text-2xl font-bold">R$ 4,287.50</p>
+            <p className="text-2xl font-bold">
+              R$ {(account?.balance ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
 

@@ -6,37 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Phone, Mail, CreditCard, Key, Plus, Trash2, Copy, Check } from "lucide-react"
-
-type PixKeyType = "phone" | "email" | "cpf" | "random"
-
-interface PixKey {
-  id: string
-  type: PixKeyType
-  value: string
-  createdAt: Date
-}
+import { Phone, Mail, CreditCard, Key, Plus, Trash2, Copy, Check, Loader } from "lucide-react"
+import { usePixKeys, type PixKeyType } from "@/hooks/use-pix-keys"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function PixKeysView() {
-  const [pixKeys, setPixKeys] = useState<PixKey[]>([
-    {
-      id: "1",
-      type: "phone",
-      value: "+55 11 98765-4321",
-      createdAt: new Date("2024-01-15"),
-    },
-    {
-      id: "2",
-      type: "email",
-      value: "user@example.com",
-      createdAt: new Date("2024-02-20"),
-    },
-  ])
+  const { pixKeys, loading, addPixKey, deletePixKey, error } = usePixKeys()
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedType, setSelectedType] = useState<PixKeyType>("phone")
   const [keyValue, setKeyValue] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const getKeyIcon = (type: PixKeyType) => {
     switch (type) {
@@ -69,33 +51,31 @@ export function PixKeysView() {
     return !pixKeys.some((key) => key.type === type)
   }
 
-  const generateRandomKey = () => {
-    const chars = "0123456789abcdef"
-    let key = ""
-    for (let i = 0; i < 32; i++) {
-      key += chars[Math.floor(Math.random() * chars.length)]
-      if ([7, 11, 15, 19].includes(i)) key += "-"
-    }
-    return key
-  }
-
-  const handleAddKey = () => {
-    if (!keyValue.trim() && selectedType !== "random") return
-
-    const newKey: PixKey = {
-      id: Date.now().toString(),
-      type: selectedType,
-      value: selectedType === "random" ? generateRandomKey() : keyValue,
-      createdAt: new Date(),
+  const handleAddKey = async () => {
+    if (!keyValue.trim() && selectedType !== "random") {
+      setSubmitError("Please enter a value for this key type")
+      return
     }
 
-    setPixKeys([...pixKeys, newKey])
-    setKeyValue("")
-    setShowAddForm(false)
+    try {
+      setIsSubmitting(true)
+      setSubmitError(null)
+      await addPixKey(selectedType, selectedType === "random" ? undefined : keyValue)
+      setKeyValue("")
+      setShowAddForm(false)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to add key")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDeleteKey = (id: string) => {
-    setPixKeys(pixKeys.filter((key) => key.id !== id))
+  const handleDeleteKey = async (id: string) => {
+    try {
+      await deletePixKey(id)
+    } catch (err) {
+      console.error("Failed to delete key:", err)
+    }
   }
 
   const handleCopyKey = (id: string, value: string) => {
@@ -167,6 +147,7 @@ export function PixKeysView() {
                 value={keyValue}
                 onChange={(e) => setKeyValue(e.target.value)}
                 type={selectedType === "email" ? "email" : "text"}
+                disabled={isSubmitting}
               />
             </div>
           )}
@@ -179,11 +160,27 @@ export function PixKeysView() {
             </div>
           )}
 
+          {submitError && <div className="p-3 bg-destructive/10 text-destructive rounded text-sm">{submitError}</div>}
+
           <div className="flex gap-2">
-            <Button onClick={handleAddKey} className="flex-1">
-              {selectedType === "random" ? "Generate Key" : "Add Key"}
+            <Button onClick={handleAddKey} className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : selectedType === "random" ? (
+                "Generate Key"
+              ) : (
+                "Add Key"
+              )}
             </Button>
-            <Button variant="outline" onClick={() => setShowAddForm(false)} className="bg-transparent">
+            <Button
+              variant="outline"
+              onClick={() => setShowAddForm(false)}
+              className="bg-transparent"
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
           </div>
@@ -193,7 +190,13 @@ export function PixKeysView() {
       <div className="space-y-3">
         <Label className="text-base">Registered Keys ({pixKeys.length})</Label>
 
-        {pixKeys.length === 0 ? (
+        {loading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : error ? (
+          <Card className="p-4 text-center text-destructive">
+            <p>{error}</p>
+          </Card>
+        ) : pixKeys.length === 0 ? (
           <Card className="p-8">
             <div className="text-center space-y-2">
               <div className="h-16 w-16 mx-auto bg-muted rounded-full flex items-center justify-center">
@@ -222,7 +225,9 @@ export function PixKeysView() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground break-all">{key.value}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Added {key.createdAt.toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Added {new Date(key.createdAt).toLocaleDateString("pt-BR")}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
