@@ -8,8 +8,63 @@ import { Badge } from "@/components/ui/badge"
 import { Search, ArrowUpRight, ArrowDownLeft, Download } from "lucide-react"
 import { useTransactions } from "@/hooks/use-transactions"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { Transaction } from "@/hooks/use-transactions"
 
 const categories = ["All", "Food", "Transport", "Health", "Entertainment", "Freelance", "Services", "Personal"]
+
+function exportToCSV(transactions: Transaction[]) {
+  // CSV Headers
+  const headers = ["Date", "Type", "Receiver Name", "Amount (R$)", "Description", "Category"]
+  
+  // Convert transactions to CSV rows
+  const rows = transactions.map((transaction) => {
+    const date = new Date(transaction.created_at).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    
+    const type = transaction.type === "sent" ? "Sent" : "Received"
+    const receiverName = transaction.receiver_name || "Unknown User"
+    const amount = transaction.type === "received" ? `+${Math.abs(transaction.amount).toFixed(2)}` : `-${Math.abs(transaction.amount).toFixed(2)}`
+    const description = transaction.description || ""
+    const category = transaction.category || ""
+    
+    // Escape fields that might contain commas or quotes
+    const escapeCSV = (field: string) => {
+      if (field.includes(",") || field.includes('"') || field.includes("\n")) {
+        return `"${field.replace(/"/g, '""')}"`
+      }
+      return field
+    }
+    
+    return [
+      escapeCSV(date),
+      escapeCSV(type),
+      escapeCSV(receiverName),
+      escapeCSV(amount),
+      escapeCSV(description),
+      escapeCSV(category),
+    ].join(",")
+  })
+  
+  // Combine headers and rows
+  const csvContent = [headers.join(","), ...rows].join("\n")
+  
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+  const link = document.createElement("a")
+  const url = URL.createObjectURL(blob)
+  
+  link.setAttribute("href", url)
+  link.setAttribute("download", `transactions_${new Date().toISOString().split("T")[0]}.csv`)
+  link.style.visibility = "hidden"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
 export function TransactionsView() {
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -26,12 +81,19 @@ export function TransactionsView() {
 
   const total = filteredTransactions.reduce((sum, t) => sum + (t.type === "sent" ? -Math.abs(t.amount) : t.amount), 0)
 
+  const handleExport = () => {
+    if (filteredTransactions.length === 0) {
+      return
+    }
+    exportToCSV(filteredTransactions)
+  }
+
   return (
     <div className="px-4 py-6 space-y-6">
       <header className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Transactions</h1>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredTransactions.length === 0}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
