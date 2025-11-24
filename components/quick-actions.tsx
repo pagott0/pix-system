@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/dialog"
 import { PaymentForm } from "@/components/payment-form"
 import { ScheduledPaymentForm } from "@/components/scheduled-payment-form"
+import { RequestMoneyDialog } from "@/components/request-money-dialog"
 
 export function QuickActions() {
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false)
+  const [isReceiveDialogOpen, setIsReceiveDialogOpen] = useState(false)
 
   return (
     <>
@@ -31,7 +33,11 @@ export function QuickActions() {
           <span className="text-xs">Send</span>
         </Button>
 
-      <Button variant="outline" className="flex-col h-auto py-4 gap-2 bg-transparent">
+      <Button
+        variant="outline"
+        className="flex-col h-auto py-4 gap-2 bg-transparent"
+        onClick={() => setIsReceiveDialogOpen(true)}
+      >
         <div className="h-10 w-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
           <Download className="h-5 w-5" />
         </div>
@@ -84,6 +90,8 @@ export function QuickActions() {
         />
       </DialogContent>
     </Dialog>
+
+    <RequestMoneyDialog open={isReceiveDialogOpen} onOpenChange={setIsReceiveDialogOpen} />
     </>
   )
 }

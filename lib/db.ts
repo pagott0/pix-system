@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { PixKey, Transaction, ScheduledPayment } from "./types"
+import type { PixKey, Transaction, ScheduledPayment, PaymentRequest } from "./types"
 
 // User operations
 export const dbUsers = {
@@ -303,5 +303,80 @@ export const dbScheduledPayments = {
 
     if (error) throw new Error(`Failed to delete scheduled payment: ${error.message}`)
     return data as ScheduledPayment
+  },
+}
+
+// Payment Request operations
+export const dbPaymentRequests = {
+  async getAll(userId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("payment_requests")
+      .select("*")
+      .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order("created_at", { ascending: false })
+
+    if (error) throw new Error(`Failed to fetch payment requests: ${error.message}`)
+    return data as PaymentRequest[]
+  },
+
+  async getPendingForUser(userId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("payment_requests")
+      .select("*")
+      .eq("receiver_id", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+
+    if (error) throw new Error(`Failed to fetch pending payment requests: ${error.message}`)
+    return data as PaymentRequest[]
+  },
+
+  async getById(id: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from("payment_requests").select("*").eq("id", id).maybeSingle()
+
+    if (error) return null
+    return data as PaymentRequest | null
+  },
+
+  async create(requesterId: string, receiverId: string, amount: number, description?: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("payment_requests")
+      .insert({
+        requester_id: requesterId,
+        receiver_id: receiverId,
+        amount,
+        description: description || null,
+        status: "pending",
+      })
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to create payment request: ${error.message}`)
+    return data as PaymentRequest
+  },
+
+  async update(id: string, updates: Partial<PaymentRequest>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("payment_requests")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to update payment request: ${error.message}`)
+    return data as PaymentRequest
+  },
+
+  async delete(id: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from("payment_requests").delete().eq("id", id).select().single()
+
+    if (error) throw new Error(`Failed to delete payment request: ${error.message}`)
+    return data as PaymentRequest
   },
 }

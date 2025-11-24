@@ -7,6 +7,7 @@ import './globals.css'
 import { Geist_Mono, Montserrat as V0_Font_Montserrat, Geist_Mono as V0_Font_Geist_Mono, Bitter as V0_Font_Bitter } from 'next/font/google'
 import { AuthProvider } from '@/contexts/auth-context'
 import { DuePaymentsChecker } from '@/components/due-payments-checker'
+import { PendingRequestsChecker } from '@/components/pending-requests-checker'
 
 // Initialize fonts
 const _montserrat = V0_Font_Montserrat({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
@@ -30,6 +31,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <DuePaymentsChecker />
+          <PendingRequestsChecker />
           <Toaster />
         </AuthProvider>
         <Analytics />

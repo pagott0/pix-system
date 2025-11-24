@@ -57,6 +57,19 @@ export interface ScheduledPayment {
   updated_at: string
 }
 
+export interface PaymentRequest {
+  id: string
+  requester_id: string
+  receiver_id: string
+  amount: number
+  description?: string
+  status: "pending" | "accepted" | "rejected" | "cancelled"
+  created_at: string
+  updated_at: string
+  requester_name?: string
+  receiver_name?: string
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data?: T
