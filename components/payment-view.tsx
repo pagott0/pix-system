@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { QrCode, User, Calendar, Users, Key } from "lucide-react"
+import { QrCode, User, Calendar, Users, Key, Loader } from "lucide-react"
 import { PixKeysView } from "./pix-keys-view"
 import { PaymentForm } from "./payment-form"
 import { useRecentContacts } from "@/hooks/use-recent-contacts"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
+import { ScheduledPaymentForm } from "@/components/scheduled-payment-form"
+import { useScheduledPayments } from "@/hooks/use-scheduled-payments"
+import { Badge } from "@/components/ui/badge"
+import { Trash2 } from "lucide-react"
 
 function ContactPaymentView() {
   const { contacts, loading } = useRecentContacts()
@@ -96,6 +101,106 @@ function ContactPaymentView() {
   )
 }
 
+function ScheduledPaymentView() {
+  const { scheduledPayments, loading, refetch } = useScheduledPayments()
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to cancel this scheduled payment?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/scheduled-payments/${id}`, {
+        method: "DELETE",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to cancel scheduled payment")
+      }
+
+      toast.success("Scheduled payment cancelled")
+      refetch()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to cancel scheduled payment")
+    }
+  }
+
+  const handleSuccess = () => {
+    refetch()
+  }
+
+  const pendingPayments = scheduledPayments.filter((p) => p.status === "pending")
+
+  return (
+    <div className="space-y-4">
+      <ScheduledPaymentForm onSuccess={handleSuccess} />
+
+      {pendingPayments.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Scheduled Payments</h3>
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pendingPayments.map((payment) => {
+                const scheduledDate = new Date(payment.scheduled_date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+
+                const isOverdue = new Date(payment.scheduled_date) < new Date()
+
+                return (
+                  <Card key={payment.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{payment.receiver_pix_key}</p>
+                          {isOverdue && (
+                            <Badge variant="destructive" className="text-xs">
+                              Overdue
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>R$ {Number(payment.amount).toFixed(2)}</span>
+                          <span>{scheduledDate}</span>
+                          {payment.category && (
+                            <Badge variant="secondary" className="text-xs">
+                              {payment.category}
+                            </Badge>
+                          )}
+                        </div>
+                        {payment.description && (
+                          <p className="text-sm text-muted-foreground">{payment.description}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(payment.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function PaymentView() {
   return (
     <div className="px-4 py-6 space-y-6">
@@ -145,45 +250,7 @@ export function PaymentView() {
         </TabsContent>
 
         <TabsContent value="scheduled" className="space-y-4 mt-6">
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="scheduled-receiver">Receiver</Label>
-                <Input id="scheduled-receiver" placeholder="Receiver's Pix key" disabled />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduled-amount">Amount</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                  <Input id="scheduled-amount" type="number" placeholder="0.00" className="pl-10" disabled />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduled-date">Payment date</Label>
-                <Input id="scheduled-date" type="date" disabled />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduled-frequency">Frequency</Label>
-                <select
-                  id="scheduled-frequency"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  disabled
-                >
-                  <option>Once</option>
-                  <option>Weekly</option>
-                  <option>Monthly</option>
-                  <option>Yearly</option>
-                </select>
-              </div>
-            </div>
-          </Card>
-
-          <Button className="w-full" size="lg" disabled>
-            Schedule Payment (Coming Soon)
-          </Button>
+          <ScheduledPaymentView />
         </TabsContent>
 
         <TabsContent value="split" className="space-y-4 mt-6">

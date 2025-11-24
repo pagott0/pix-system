@@ -43,6 +43,20 @@ export interface Account {
   updated_at: string
 }
 
+export interface ScheduledPayment {
+  id: string
+  sender_id: string
+  receiver_pix_key: string
+  receiver_id: string
+  amount: number
+  description?: string
+  category?: string
+  scheduled_date: string
+  status: "pending" | "completed" | "cancelled" | "failed"
+  created_at: string
+  updated_at: string
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data?: T

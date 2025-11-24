@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { PixKey, Transaction } from "./types"
+import type { PixKey, Transaction, ScheduledPayment } from "./types"
 
 // User operations
 export const dbUsers = {
@@ -214,5 +214,94 @@ export const dbTransactions = {
 
     if (error) throw new Error(`Failed to update transaction: ${error.message}`)
     return data as Transaction
+  },
+}
+
+// Scheduled Payment operations
+export const dbScheduledPayments = {
+  async getAll(userId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("scheduled_payments")
+      .select("*")
+      .eq("sender_id", userId)
+      .order("scheduled_date", { ascending: true })
+
+    if (error) throw new Error(`Failed to fetch scheduled payments: ${error.message}`)
+    return data as ScheduledPayment[]
+  },
+
+  async getById(id: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from("scheduled_payments").select("*").eq("id", id).maybeSingle()
+
+    if (error) return null
+    return data as ScheduledPayment | null
+  },
+
+  async getDuePayments(userId: string) {
+    const supabase = await createClient()
+    const today = new Date().toISOString().split("T")[0] // Get today's date in YYYY-MM-DD format
+    
+    const { data, error } = await supabase
+      .from("scheduled_payments")
+      .select("*")
+      .eq("sender_id", userId)
+      .eq("status", "pending")
+      .lte("scheduled_date", today)
+      .order("scheduled_date", { ascending: true })
+
+    if (error) throw new Error(`Failed to fetch due payments: ${error.message}`)
+    return data as ScheduledPayment[]
+  },
+
+  async create(
+    senderId: string,
+    receiverId: string,
+    receiverPixKey: string,
+    amount: number,
+    scheduledDate: string,
+    description?: string,
+    category?: string,
+  ) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("scheduled_payments")
+      .insert({
+        sender_id: senderId,
+        receiver_id: receiverId,
+        receiver_pix_key: receiverPixKey,
+        amount,
+        scheduled_date: scheduledDate,
+        description: description || null,
+        category: category || null,
+        status: "pending",
+      })
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to create scheduled payment: ${error.message}`)
+    return data as ScheduledPayment
+  },
+
+  async update(id: string, updates: Partial<ScheduledPayment>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("scheduled_payments")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to update scheduled payment: ${error.message}`)
+    return data as ScheduledPayment
+  },
+
+  async delete(id: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from("scheduled_payments").delete().eq("id", id).select().single()
+
+    if (error) throw new Error(`Failed to delete scheduled payment: ${error.message}`)
+    return data as ScheduledPayment
   },
 }

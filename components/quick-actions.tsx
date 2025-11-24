@@ -11,9 +11,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { PaymentForm } from "@/components/payment-form"
+import { ScheduledPaymentForm } from "@/components/scheduled-payment-form"
 
 export function QuickActions() {
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false)
 
   return (
     <>
@@ -43,7 +45,11 @@ export function QuickActions() {
         <span className="text-xs">QR Code</span>
       </Button>
 
-      <Button variant="outline" className="flex-col h-auto py-4 gap-2 bg-transparent">
+      <Button
+        variant="outline"
+        className="flex-col h-auto py-4 gap-2 bg-transparent"
+        onClick={() => setIsScheduleDialogOpen(true)}
+      >
         <div className="h-10 w-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
           <Calendar className="h-5 w-5" />
         </div>
@@ -60,6 +66,20 @@ export function QuickActions() {
         <PaymentForm
           onSuccess={() => setIsSendDialogOpen(false)}
           onCancel={() => setIsSendDialogOpen(false)}
+          showCancelButton={true}
+        />
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Schedule Payment</DialogTitle>
+          <DialogDescription>Schedule a payment for a future date</DialogDescription>
+        </DialogHeader>
+        <ScheduledPaymentForm
+          onSuccess={() => setIsScheduleDialogOpen(false)}
+          onCancel={() => setIsScheduleDialogOpen(false)}
           showCancelButton={true}
         />
       </DialogContent>
