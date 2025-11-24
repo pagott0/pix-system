@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,9 +9,94 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QrCode, User, Calendar, Users, Key } from "lucide-react"
 import { PixKeysView } from "./pix-keys-view"
 import { PaymentForm } from "./payment-form"
+import { useRecentContacts } from "@/hooks/use-recent-contacts"
+import { Skeleton } from "@/components/ui/skeleton"
+
+function ContactPaymentView() {
+  const { contacts, loading } = useRecentContacts()
+  const [selectedContact, setSelectedContact] = useState<{ name: string; pixKey: string } | null>(null)
+
+  const handleContactSelect = (contact: { receiver_name: string; pix_key: string }) => {
+    setSelectedContact({
+      name: contact.receiver_name,
+      pixKey: contact.pix_key,
+    })
+  }
+
+  const handlePaymentSuccess = () => {
+    setSelectedContact(null)
+  }
+
+  if (selectedContact) {
+    return (
+      <div className="space-y-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+              {selectedContact.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">{selectedContact.name}</p>
+              <p className="text-sm text-muted-foreground">{selectedContact.pixKey}</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedContact(null)}>
+              Change
+            </Button>
+          </div>
+        </Card>
+
+        <PaymentForm
+          defaultReceiver={selectedContact.pixKey}
+          receiverReadOnly={true}
+          onSuccess={handlePaymentSuccess}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Recent contacts</Label>
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : contacts.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">
+              <p className="text-sm">No recent contacts found</p>
+              <p className="text-xs mt-1">Send a payment to someone to add them to your contacts</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {contacts.map((contact) => (
+                <Button
+                  key={contact.receiver_id}
+                  variant="outline"
+                  className="w-full h-14 justify-start bg-transparent hover:bg-accent cursor-pointer"
+                  onClick={() => handleContactSelect(contact)}
+                >
+                  <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center mr-3">
+                    {contact.receiver_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">{contact.receiver_name}</p>
+                    <p className="text-xs text-muted-foreground">{contact.pix_key}</p>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
 
 export function PaymentView() {
-
   return (
     <div className="px-4 py-6 space-y-6">
       <header>
@@ -55,46 +141,7 @@ export function PaymentView() {
         </TabsContent>
 
         <TabsContent value="contact" className="space-y-4 mt-6">
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Recent contacts</Label>
-                <div className="space-y-2">
-                  {["Maria Silva", "João Santos", "Ana Costa"].map((name) => (
-                    <Button
-                      key={name}
-                      variant="outline"
-                      className="w-full justify-start bg-transparent"
-                      disabled
-                    >
-                      <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center mr-3">
-                        {name.charAt(0)}
-                      </div>
-                      {name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact-amount">Amount</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                  <Input
-                    id="contact-amount"
-                    type="number"
-                    placeholder="0.00"
-                    className="pl-10"
-                    disabled
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Button className="w-full" size="lg" disabled>
-            Send Pix (Coming Soon)
-          </Button>
+          <ContactPaymentView />
         </TabsContent>
 
         <TabsContent value="scheduled" className="space-y-4 mt-6">

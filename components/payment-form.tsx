@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,11 +14,13 @@ interface PaymentFormProps {
   onSuccess?: () => void
   onCancel?: () => void
   showCancelButton?: boolean
+  defaultReceiver?: string
+  receiverReadOnly?: boolean
 }
 
-export function PaymentForm({ onSuccess, onCancel, showCancelButton = false }: PaymentFormProps) {
+export function PaymentForm({ onSuccess, onCancel, showCancelButton = false, defaultReceiver = "", receiverReadOnly = false }: PaymentFormProps) {
   const [amount, setAmount] = useState("")
-  const [receiver, setReceiver] = useState("")
+  const [receiver, setReceiver] = useState(defaultReceiver)
   const [description, setDescription] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("Food")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -26,6 +28,13 @@ export function PaymentForm({ onSuccess, onCancel, showCancelButton = false }: P
   const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const { sendTransaction } = useTransactions()
+
+  // Update receiver when defaultReceiver changes
+  useEffect(() => {
+    if (defaultReceiver) {
+      setReceiver(defaultReceiver)
+    }
+  }, [defaultReceiver])
 
   const handleSendPix = async () => {
     if (!amount || !receiver) {
@@ -75,7 +84,8 @@ export function PaymentForm({ onSuccess, onCancel, showCancelButton = false }: P
               placeholder="CPF, email, phone or random key"
               value={receiver}
               onChange={(e) => setReceiver(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || receiverReadOnly}
+              readOnly={receiverReadOnly}
             />
           </div>
 
