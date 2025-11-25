@@ -1,4 +1,4 @@
-  create table if not exists public.monthly_budgets (
+create table if not exists public.monthly_budgets (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users (id) on delete cascade,
     month_year date not null,
@@ -26,4 +26,3 @@
   create policy "Users can delete their monthly budget"
     on public.monthly_budgets for delete
     using (auth.uid() = user_id);
-

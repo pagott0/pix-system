@@ -65,4 +65,3 @@ export function useMonthlyBudget() {
 
   return { budget, loading, saving, error, refetch: fetchBudget, saveBudget }
 }
-

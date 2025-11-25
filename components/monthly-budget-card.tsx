@@ -158,4 +158,3 @@ export function MonthlyBudgetCard({ monthlySpent }: MonthlyBudgetCardProps) {
     </Card>
   )
 }
-
