@@ -30,4 +30,3 @@ create policy "Users can delete requests they sent" on public.payment_requests
 create index if not exists idx_payment_requests_receiver_status 
   on public.payment_requests(receiver_id, status) 
   where status = 'pending';
-

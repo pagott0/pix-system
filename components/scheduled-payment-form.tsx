@@ -189,4 +189,3 @@ export function ScheduledPaymentForm({ onSuccess, onCancel, showCancelButton = f
     </div>
   )
 }
-

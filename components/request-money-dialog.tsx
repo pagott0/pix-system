@@ -195,4 +195,3 @@ export function RequestMoneyDialog({ open, onOpenChange }: RequestMoneyDialogPro
     </Dialog>
   )
 }
-

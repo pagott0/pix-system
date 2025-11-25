@@ -140,4 +140,3 @@ export function DuePaymentDialog({ payment, open, onClose, onSuccess }: DuePayme
     </Dialog>
   )
 }
-

@@ -49,4 +49,3 @@ export function useDuePayments() {
 
   return { duePayments, loading, refetch: checkDuePayments }
 }
-

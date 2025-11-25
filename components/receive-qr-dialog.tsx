@@ -39,4 +39,3 @@ export function ReceiveQrDialog({ open, onOpenChange }: ReceiveQrDialogProps) {
     </Dialog>
   )
 }
-

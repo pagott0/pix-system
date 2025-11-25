@@ -49,4 +49,3 @@ export function useScheduledPayments() {
 
   return { scheduledPayments, loading, refetch: fetchScheduledPayments }
 }
-

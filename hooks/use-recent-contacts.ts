@@ -118,4 +118,3 @@ export function useRecentContacts() {
 
   return { contacts, loading }
 }
-
