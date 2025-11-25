@@ -33,4 +33,3 @@ create policy "Users can delete their own scheduled payments" on public.schedule
 create index if not exists idx_scheduled_payments_date_status 
   on public.scheduled_payments(scheduled_date, status) 
   where status = 'pending';
-
