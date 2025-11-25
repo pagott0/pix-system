@@ -70,6 +70,16 @@ export interface PaymentRequest {
   receiver_name?: string
 }
 
+export interface MonthlyBudget {
+  id: string
+  user_id: string
+  month_year: string
+  amount: number
+  description?: string
+  created_at: string
+  updated_at: string
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data?: T

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { PixKey, Transaction, ScheduledPayment, PaymentRequest } from "./types"
+import type { PixKey, Transaction, ScheduledPayment, PaymentRequest, MonthlyBudget } from "./types"
 
 // User operations
 export const dbUsers = {
@@ -378,5 +378,46 @@ export const dbPaymentRequests = {
 
     if (error) throw new Error(`Failed to delete payment request: ${error.message}`)
     return data as PaymentRequest
+  },
+}
+
+// Monthly budget operations
+export const dbBudgets = {
+  async getForMonth(userId: string, monthYear: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("monthly_budgets")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("month_year", monthYear)
+      .maybeSingle()
+
+    if (error) {
+      console.error("Error fetching monthly budget:", error)
+      return null
+    }
+
+    return data as MonthlyBudget | null
+  },
+
+  async upsert(userId: string, monthYear: string, amount: number, description?: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("monthly_budgets")
+      .upsert(
+        {
+          user_id: userId,
+          month_year: monthYear,
+          amount,
+          description: description || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,month_year" },
+      )
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to save monthly budget: ${error.message}`)
+    return data as MonthlyBudget
   },
 }

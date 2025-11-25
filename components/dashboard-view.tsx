@@ -9,6 +9,7 @@ import { IncomeExpensesChart } from "@/components/income-expenses-chart"
 import { MonthlyComparison } from "@/components/monthly-comparison"
 import { TopContacts } from "@/components/top-contacts"
 import { QuickActions } from "@/components/quick-actions"
+import { MonthlyBudgetCard } from "@/components/monthly-budget-card"
 import { useAccount } from "@/hooks/use-account"
 import { useTransactions } from "@/hooks/use-transactions"
 import { useAuth } from "@/contexts/auth-context"
@@ -46,6 +47,10 @@ export function DashboardView() {
   monthlyTransactions.forEach((t) => {
     startingBalance -= t.amount
   })
+
+  const monthlySpent = monthlyTransactions
+    .filter((t) => t.type === "sent")
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0)
 
   // Calculate monthly return percentage
   const monthlyReturn = startingBalance > 0 
@@ -88,6 +93,8 @@ export function DashboardView() {
       <QuickActions />
 
       <MonthlyComparison />
+      <MonthlyBudgetCard monthlySpent={monthlySpent} />
+
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
