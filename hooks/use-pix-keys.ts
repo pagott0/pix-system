@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 export type PixKeyType = "phone" | "email" | "cpf" | "random"
 
@@ -16,8 +16,12 @@ export function usePixKeys() {
   const [pixKeys, setPixKeys] = useState<PixKey[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    // Prevent refetch on window focus
+    if (hasFetched.current) return
+    hasFetched.current = true
     fetchPixKeys()
   }, [])
 

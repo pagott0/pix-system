@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import type { PaymentRequest } from "@/lib/types"
 
@@ -8,6 +8,7 @@ export function usePendingRequests() {
   const [pendingRequests, setPendingRequests] = useState<PaymentRequest[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const lastUserIdRef = useRef<string>("")
 
   const checkPendingRequests = async () => {
     if (!user) {
@@ -37,6 +38,11 @@ export function usePendingRequests() {
   }
 
   useEffect(() => {
+    // Prevent refetch on window focus - only refetch if user changed
+    if (lastUserIdRef.current === user?.id && lastUserIdRef.current !== "") {
+      return
+    }
+    lastUserIdRef.current = user?.id || ""
     checkPendingRequests()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])

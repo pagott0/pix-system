@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { QrCode, User, Calendar, Users, Key, Loader } from "lucide-react"
+import { QrCode, User, Calendar, Key, Loader, Trash2 } from "lucide-react"
 import { PixKeysView } from "./pix-keys-view"
 import { PaymentForm } from "./payment-form"
 import { useRecentContacts } from "@/hooks/use-recent-contacts"
@@ -15,7 +15,7 @@ import { toast } from "sonner"
 import { ScheduledPaymentForm } from "@/components/scheduled-payment-form"
 import { useScheduledPayments } from "@/hooks/use-scheduled-payments"
 import { Badge } from "@/components/ui/badge"
-import { Trash2 } from "lucide-react"
+import { ReceiveQrDialog } from "@/components/receive-qr-dialog"
 
 function ContactPaymentView() {
   const { contacts, loading } = useRecentContacts()
@@ -202,93 +202,68 @@ function ScheduledPaymentView() {
 }
 
 export function PaymentView() {
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false)
+
   return (
-    <div className="px-4 py-6 space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">New Payment</h1>
-        <p className="text-sm text-muted-foreground">Choose how you want to pay</p>
-      </header>
+    <>
+      <div className="px-4 py-6 space-y-6">
+        <header>
+          <h1 className="text-2xl font-bold">New Payment</h1>
+          <p className="text-sm text-muted-foreground">Choose how you want to pay</p>
+        </header>
 
-      <Tabs defaultValue="pix" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="pix">
-            <QrCode className="h-4 w-4" />
-          </TabsTrigger>
-          <TabsTrigger value="contact">
-            <User className="h-4 w-4" />
-          </TabsTrigger>
-          <TabsTrigger value="scheduled">
-            <Calendar className="h-4 w-4" />
-          </TabsTrigger>
-          <TabsTrigger value="split">
-            <Users className="h-4 w-4" />
-          </TabsTrigger>
-          <TabsTrigger value="keys">
-            <Key className="h-4 w-4" />
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="pix" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="pix">
+              <QrCode className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="contact">
+              <User className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="scheduled">
+              <Calendar className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="keys">
+              <Key className="h-4 w-4" />
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="keys" className="mt-6">
-          <PixKeysView />
-        </TabsContent>
+          <TabsContent value="keys" className="mt-6">
+            <PixKeysView />
+          </TabsContent>
 
-        <TabsContent value="pix" className="space-y-4 mt-6">
-          <PaymentForm />
+          <TabsContent value="pix" className="space-y-4 mt-6">
+            <PaymentForm />
 
-          <div className="flex items-center justify-center py-4">
-            <div className="text-center space-y-2">
-              <div className="h-32 w-32 mx-auto bg-muted rounded-lg flex items-center justify-center">
-                <QrCode className="h-16 w-16 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">or scan a QR Code</p>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="contact" className="space-y-4 mt-6">
-          <ContactPaymentView />
-        </TabsContent>
-
-        <TabsContent value="scheduled" className="space-y-4 mt-6">
-          <ScheduledPaymentView />
-        </TabsContent>
-
-        <TabsContent value="split" className="space-y-4 mt-6">
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="split-amount">Total amount</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                  <Input id="split-amount" type="number" placeholder="0.00" className="pl-10" disabled />
+            <Card className="p-6 text-center space-y-4">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <QrCode className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium">Receive via QR code</p>
+                  <p className="text-sm text-muted-foreground">
+                    Show a Pix QR so someone else can scan and pay you.
+                  </p>
                 </div>
               </div>
+              <Button onClick={() => setIsQrDialogOpen(true)} className="w-full" variant="outline">
+                Show QR to receive
+              </Button>
+            </Card>
+          </TabsContent>
 
-              <div className="space-y-2">
-                <Label htmlFor="split-people">Split between</Label>
-                <Input id="split-people" type="number" placeholder="Number of people" min="2" disabled />
-              </div>
+          <TabsContent value="contact" className="space-y-4 mt-6">
+            <ContactPaymentView />
+          </TabsContent>
 
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Amount per person</p>
-                <p className="text-2xl font-bold">R$ 0.00</p>
-              </div>
+          <TabsContent value="scheduled" className="space-y-4 mt-6">
+            <ScheduledPaymentView />
+          </TabsContent>
+        </Tabs>
+      </div>
 
-              <div className="space-y-2">
-                <Label>Add participants</Label>
-                <Button variant="outline" className="w-full bg-transparent" disabled>
-                  <Users className="h-4 w-4 mr-2" />
-                  Select contacts
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-          <Button className="w-full" size="lg" disabled>
-            Create Split (Coming Soon)
-          </Button>
-        </TabsContent>
-      </Tabs>
-    </div>
+      <ReceiveQrDialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen} />
+    </>
   )
 }

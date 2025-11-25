@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import type { Transaction } from "@/lib/types"
 
@@ -15,8 +15,15 @@ export function useRecentContacts() {
   const [contacts, setContacts] = useState<RecentContact[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const lastUserIdRef = useRef<string>("")
 
   useEffect(() => {
+    // Prevent refetch on window focus - only refetch if user changed
+    if (lastUserIdRef.current === user?.id && lastUserIdRef.current !== "") {
+      return
+    }
+    lastUserIdRef.current = user?.id || ""
+
     const fetchContacts = async () => {
       if (!user) {
         setLoading(false)

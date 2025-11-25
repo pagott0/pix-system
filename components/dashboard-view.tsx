@@ -4,6 +4,10 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowUpRight, ArrowDownLeft, TrendingUp, Bell, LogOut } from "lucide-react"
 import { BalanceChart } from "@/components/balance-chart"
+import { CategoryChart } from "@/components/category-chart"
+import { IncomeExpensesChart } from "@/components/income-expenses-chart"
+import { MonthlyComparison } from "@/components/monthly-comparison"
+import { TopContacts } from "@/components/top-contacts"
 import { QuickActions } from "@/components/quick-actions"
 import { useAccount } from "@/hooks/use-account"
 import { useTransactions } from "@/hooks/use-transactions"
@@ -12,7 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export function DashboardView() {
   const { account, loading: accountLoading } = useAccount()
-  const { transactions, loading: transactionsLoading } = useTransactions({ limit: 3 })
+  const { transactions: allTransactions } = useTransactions() // Get all transactions for monthly calculation
+  const { transactions: recentTransactions, loading: transactionsLoading } = useTransactions({ limit: 3 })
   const { logout } = useAuth()
 
   if (accountLoading) {
@@ -26,14 +31,28 @@ export function DashboardView() {
 
   const balanceDisplay = account?.balance ?? 0
   
-  const recentTransactions = transactions.slice(0, 3)
-  const totalReceived = recentTransactions
-    .filter((t) => t.type === "received")
-    .reduce((sum, t) => sum + t.amount, 0)
-  const totalSent = recentTransactions
-    .filter((t) => t.type === "sent")
-    .reduce((sum, t) => sum + t.amount, 0)
-  const monthlyGrowth = totalSent > 0 ? ((totalReceived / totalSent) * 100 - 100).toFixed(1) : "0.0"
+  // Calculate monthly return based on current month transactions
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  startOfMonth.setHours(0, 0, 0, 0)
+
+  const monthlyTransactions = allTransactions.filter((t) => {
+    const tDate = new Date(t.created_at)
+    return tDate >= startOfMonth
+  })
+
+  // Calculate starting balance for the month (current balance minus all transactions this month)
+  let startingBalance = balanceDisplay
+  monthlyTransactions.forEach((t) => {
+    startingBalance -= t.amount
+  })
+
+  // Calculate monthly return percentage
+  const monthlyReturn = startingBalance > 0 
+    ? (((balanceDisplay - startingBalance) / startingBalance) * 100).toFixed(1)
+    : balanceDisplay > startingBalance 
+      ? "100.0" 
+      : "0.0"
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -61,12 +80,14 @@ export function DashboardView() {
           </p>
           <div className="flex items-center gap-2 text-sm">
             <TrendingUp className="h-4 w-4" />
-            <span>{monthlyGrowth}% this month</span>
+            <span>{monthlyReturn}% this month</span>
           </div>
         </div>
       </Card>
 
       <QuickActions />
+
+      <MonthlyComparison />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -77,6 +98,13 @@ export function DashboardView() {
         </div>
 
         <BalanceChart />
+        <CategoryChart />
+        <IncomeExpensesChart />
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Top Contacts</h2>
+        <TopContacts />
       </div>
 
       <div className="space-y-3">
@@ -84,12 +112,12 @@ export function DashboardView() {
 
         {transactionsLoading ? (
           <Skeleton className="h-24 w-full" />
-        ) : transactions.length === 0 ? (
+        ) : recentTransactions.length === 0 ? (
           <Card className="p-4 text-center text-muted-foreground">
             <p>No transactions yet</p>
           </Card>
         ) : (
-          transactions.map((transaction) => (
+          recentTransactions.map((transaction) => (
             <Card key={transaction.id} className="p-4">
               <div className="flex items-center gap-3">
                 <div

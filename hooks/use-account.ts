@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 interface Account {
   id: string
@@ -15,8 +15,12 @@ export function useAccount() {
   const [account, setAccount] = useState<Account | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    // Prevent refetch on window focus
+    if (hasFetched.current) return
+
     const fetchAccount = async () => {
       try {
         setLoading(true)
@@ -25,6 +29,7 @@ export function useAccount() {
         const data = await response.json()
         setAccount(data)
         setError(null)
+        hasFetched.current = true
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred")
         setAccount(null)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import type { ScheduledPayment } from "@/lib/types"
 
@@ -8,6 +8,7 @@ export function useDuePayments() {
   const [duePayments, setDuePayments] = useState<ScheduledPayment[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const lastUserIdRef = useRef<string>("")
 
   const checkDuePayments = async () => {
     if (!user) {
@@ -37,6 +38,11 @@ export function useDuePayments() {
   }
 
   useEffect(() => {
+    // Prevent refetch on window focus - only refetch if user changed
+    if (lastUserIdRef.current === user?.id && lastUserIdRef.current !== "") {
+      return
+    }
+    lastUserIdRef.current = user?.id || ""
     checkDuePayments()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import type { Transaction as DbTransaction } from "@/lib/types"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -26,8 +26,23 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  const lastOptionsRef = useRef<string>("")
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    // Create a key from options to track changes
+    const optionsKey = JSON.stringify({ category: options.category, limit: options.limit, userId: user.id })
+    
+    // Prevent refetch on window focus - only refetch if options or user changed
+    if (lastOptionsRef.current === optionsKey) {
+      return
+    }
+    lastOptionsRef.current = optionsKey
+
     const fetchTransactions = async () => {
       try {
         setLoading(true)
@@ -72,9 +87,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
       }
     }
 
-    if (user) {
-      fetchTransactions()
-    }
+    fetchTransactions()
   }, [options.category, options.limit, user])
 
   const sendTransaction = async (receiverPixKey: string, amount: number, description: string, category: string) => {
